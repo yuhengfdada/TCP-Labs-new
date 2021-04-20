@@ -13,15 +13,26 @@ using namespace std;
 void TCPReceiver::segment_received(const TCPSegment &seg) {
     if (seg.header().syn) {
         isn = seg.header().seqno;
-        started = true;
+        started = 1;
+        finished = 0;
     }
+    else if (started == 0)  return;
     bool eof = seg.header().fin;
     if (eof)    
-        finished = true;
+        finished = 1;
     
-    _reassembler.push_substring(seg.payload().copy(), unwrap(seg.header().seqno, isn, checkpoint)+1, eof);
-    checkpoint = _reassembler.first_unassembled_byte();
-    _ackno = wrap(_reassembler.first_unassembled_byte(), isn);
+    // 因为SYN不算payload，所以-1
+    string s = seg.payload().copy();
+    uint64_t seqno = unwrap(seg.header().seqno, isn, checkpoint);
+    if (seg.header().syn) seqno = unwrap(seg.header().seqno+1, isn, checkpoint);
+
+    _reassembler.push_substring(s, seqno - 1, eof);
+
+    uint64_t ack = _reassembler.first_unassembled_byte() + started + finished;
+    if ((seqno <= checkpoint) | seg.header().syn) 
+        _ackno = wrap(ack, isn);
+    checkpoint = ack;
+
 }
 
 optional<WrappingInt32> TCPReceiver::ackno() const {     

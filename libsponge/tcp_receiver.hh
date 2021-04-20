@@ -21,8 +21,8 @@ class TCPReceiver {
     size_t _capacity;
 
     WrappingInt32 isn;
-    bool started;
-    bool finished;
+    int started;
+    int finished;
     WrappingInt32 _ackno;
     uint64_t checkpoint;
   public:
@@ -30,7 +30,7 @@ class TCPReceiver {
     //!
     //! \param capacity the maximum number of bytes that the receiver will
     //!                 store in its buffers at any give time.
-    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity), isn(0), started(false), finished(false), _ackno(0), checkpoint(0){}
+    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity), isn(0), started(0), finished(0), _ackno(0), checkpoint(0){}
 
     //! \name Accessors to provide feedback to the remote TCPSender
     //!@{
