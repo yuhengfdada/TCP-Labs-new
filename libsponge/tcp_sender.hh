@@ -16,11 +16,25 @@
 //! maintains the Retransmission Timer, and retransmits in-flight
 //! segments if the retransmission timer expires.
 class TCPSender {
+  class RTimer {
+    public:
+    size_t remaining_time;
+    size_t rto;
+    enum class STATUS {STOPPED, STARTED, EXPIRED};
+    STATUS status;
+  
+    explicit RTimer(size_t RTO) : remaining_time(0), rto(RTO), status(STATUS::STOPPED){}
+    RTimer(const RTimer&) = delete;
+    void start();
+    void stop();
+    void time_passed(size_t time);
+    bool expired();
+  };
   private:
     //! our initial sequence number, the number for our SYN.
     WrappingInt32 _isn;
 
-    //! outbound queue of segments that the TCPSender wants sent
+    //! outbound queue of segments that the TCPSender wants to sent
     std::queue<TCPSegment> _segments_out{};
 
     //! retransmission timer for the connection
@@ -31,6 +45,25 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    /* retransmission related */
+    RTimer timer;
+    size_t _consec_trans_count{0};
+    // unsigned int _initial_retransmission_timeout;
+
+    /* handling outstanding segments */
+    std::queue<TCPSegment> segments_outstanding{};
+    size_t _bytes_in_flight{0};
+
+    /* read from ByteStream */
+    // Maintain the invariant: _next_seqno - latest_ackno <= window_size
+    // uint64_t _next_seqno{0};
+    uint64_t _latest_ackno{0}; 
+    size_t _window_size{1};
+
+    /* send data */
+    void send_segment(TCPSegment&);
+    bool fin_sent{false};
 
   public:
     //! Initialize a TCPSender
