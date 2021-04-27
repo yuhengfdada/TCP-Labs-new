@@ -25,6 +25,7 @@ class TCPConnection {
 
     void drain_sender_queue(bool, const std::optional<TCPSegment>&);
     void send_rst_and_abort();
+    bool check_close_prereqs();
   public:
     //! \name "Input" interface for the writer
     //!@{

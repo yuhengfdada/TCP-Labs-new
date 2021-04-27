@@ -24,6 +24,7 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     _time_since_last_segment_received = 0;
     // check RST flag
     TCPHeader hdr = seg.header();
+    // handling rst.
     if (hdr.rst) {
         _sender.stream_in().set_error();
         _receiver.stream_out().set_error();
@@ -31,19 +32,26 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         return;
     }
     _receiver.segment_received(seg);
+    // handling syn.
+    if (hdr.syn)    _sender.fill_window();
+    // handling (probably bad) ack.
     if (hdr.ack) {
-        _sender.ack_received(hdr.ackno,hdr.win);
-        _sender.fill_window();
+        // ack is only meaningful when the sender has sent SYN.
+        if (_sender.next_seqno_absolute() > 0) {
+            _sender.ack_received(hdr.ackno,hdr.win);
+            _sender.fill_window();
+        }
     }
     // if the incoming segment occupied any sequence numbers,
     // makes sure at least one segment is sent in reply.
     // NOTE: this implementation attahces ackno to header whenever possible.
     drain_sender_queue(true, seg);
-    // end the connection cleanly.
-    if (inbound_stream().input_ended() 
-        && _sender.stream_in().input_ended()
-        && _sender.next_seqno_absolute() == _sender.stream_in().bytes_written() + 2 
-        && _sender.bytes_in_flight() == 0)
+
+    if (inbound_stream().input_ended() && !_sender.is_fin_sent())
+        _linger_after_streams_finish = false;
+    // PASSIVE CLOSE: end the connection cleanly.
+    if (check_close_prereqs() && !_linger_after_streams_finish)
+        _active = false;
 }
 
 bool TCPConnection::active() const { return _active; }
@@ -66,11 +74,17 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
         return;
     }
     // end the connection cleanly. (todo)
-    // if (inbound_stream().input_ended() && )
+    if (check_close_prereqs() && _linger_after_streams_finish && _time_since_last_segment_received >= 10 * _cfg.rt_timeout) {
+        _active = false;
+    }
+    // this has to be at the end, since the actions on timeout have higher priorities over sending the last retransmitted segment.
+    drain_sender_queue(false, nullopt);
 }
 
 void TCPConnection::end_input_stream() {
     _sender.stream_in().end_input();
+    _sender.fill_window();
+    drain_sender_queue(false, nullopt);
 }
 
 void TCPConnection::connect() {
@@ -124,4 +138,13 @@ void TCPConnection::send_rst_and_abort() {
     _receiver.stream_out().set_error();
     _active = false;
     return;
+}
+
+bool TCPConnection::check_close_prereqs() {
+    if (inbound_stream().input_ended() 
+        && _sender.stream_in().input_ended()
+        && _sender.next_seqno_absolute() == _sender.stream_in().bytes_written() + 2 
+        && _sender.bytes_in_flight() == 0)
+        return true;
+    return false;
 }
