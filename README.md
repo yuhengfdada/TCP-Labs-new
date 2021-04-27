@@ -1,3 +1,5 @@
+Latest lab version: 2020 Fall.
+
     [100%] Testing the TCP connection...
     Test project /home/vagrant/code/new_144/sponge/build
             Start   1: t_wrapping_ints_cmp
