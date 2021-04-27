@@ -25,6 +25,8 @@ class TCPSender {
   
     explicit RTimer(size_t RTO) : remaining_time(0), rto(RTO), status(STATUS::STOPPED){}
     RTimer(const RTimer&) = delete;
+    RTimer(RTimer&& other) = default;
+    RTimer &operator=(RTimer &&other) = default;
     void start();
     void stop();
     void time_passed(size_t time);

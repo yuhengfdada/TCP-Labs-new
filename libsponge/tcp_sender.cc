@@ -77,6 +77,9 @@ void TCPSender::fill_window() {
 //! \param window_size The remote receiver's advertised window size
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
     uint64_t abs_ackno = unwrap(ackno, _isn, _latest_ackno);
+    // impossible ackno
+    if (abs_ackno > _next_seqno)    
+        return;
     if (abs_ackno > _latest_ackno) {
         timer.rto = _initial_retransmission_timeout;
         if (!segments_outstanding.empty())  {
