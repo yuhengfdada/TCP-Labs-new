@@ -1,5 +1,19 @@
 Latest lab version: 2020 Fall.
 
+## CS Challenge
+- [x] 61a =======> 2020/12/20 - 2020/01/08 
+- [x] 61b =======> 2021/01/10 - 2021/01/23 
+- [x] 6.006 =====> 2021/01/27 - 2021/02/09
+- [x] 6.046 =====> 2021/02/10 - 2021/02/17
+- [x] 15-213 ====> 2021/02/18 - 2021/03/09
+- [x] 162 review + 6.828 ===> 2021/03/11 - 2021/04/02
+- [x] C++ Review + Effective (Modern) Cpp ===> 2021/04/03 - 2021/04/12
+- [x] CS144 ===> 2021/04/13 - 2021/04/27
+- [ ] 15-445
+- [ ] 6.824
+- [ ] 6.null
+- [ ] More...
+
     [100%] Testing the TCP connection...
     Test project /home/vagrant/code/new_144/sponge/build
             Start   1: t_wrapping_ints_cmp
